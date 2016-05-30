@@ -1,5 +1,8 @@
 package com.example.clark.gsondemo;
 
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.Since;
+
 import java.util.Date;
 
 /**
@@ -7,10 +10,14 @@ import java.util.Date;
  */
 public class Student {
 
+    @Expose
     private int id;
 
+    @Expose
     private String name;
 
+    @Expose
+    @Since(2.0)
     private Date birthDay;
 
     public int getId() {
@@ -41,6 +48,6 @@ public class Student {
     @Override
     public String toString() {
 
-        return "Student[id=" + id + ",name=" + name + ",birthDay=" + birthDay + "]";
+        return "Student{id=" + id + ",name=" + name + ",birthDay=" + birthDay + "}";
     }
 }
