@@ -2,12 +2,18 @@ package com.example.clark.gsondemo;
 
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.TypeAdapter;
 import com.google.gson.annotations.Expose;
@@ -16,6 +22,7 @@ import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -34,7 +41,9 @@ public class MainActivity extends AppCompatActivity {
 //        gsonTest3();
 //        gsonTest4();
 //        gsonTest5();
-        gsonTest6();
+//        gsonTest6();
+//        gsonTest7();
+        gsonTest8();
     }
 
 
@@ -219,7 +228,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * Gson的容错方式
+     * Gson的容错方式（不推荐）
      */
     private void gsonTest6() {
         String jsonStr = "{\"id\":\"\",\"name\":\"张三\"}";
@@ -285,6 +294,110 @@ public class MainActivity extends AppCompatActivity {
             in.endObject();
             return student;
         }
+    }
+
+    /**
+     * Gson容错机制（推荐）
+     * 这种方式保险是很保险，但是需要维护的地方多，代码量大
+     */
+    private void gsonTest7() {
+        //方式四：基于注解的方式,方式三倾向于整体,注解的方式倾向于字段
+        Gson gson = new Gson();
+        String jsonStr = "{\"name\":\"张三\",\"id\":\"\"}";
+
+        try {
+            Teacher student = gson.fromJson(jsonStr, Teacher.class);
+            Log.i("haha", "普通解析jsonStr：" + student);
+        } catch (Exception e) {
+            Log.i("haha", "普通解析jsonStr异常打印：" + e.toString());
+        }
+
+        //注意：看Teacher的id字段，是用了下面的IntegerTypeAdpater来进行容错判断的
+        Teacher teacher = gson.fromJson(jsonStr, Teacher.class);
+        Log.i("haha", "基于注解的方式来进行容错：" + teacher);
+
+    }
+
+
+    /**
+     * 这个类是用于字段的注解方式实现的容错机制，gsonTest7方法中的方式四。
+     */
+    public class IntegerTypeAdapter extends TypeAdapter<Integer> {
+
+        @Override
+        public void write(JsonWriter out, Integer value) throws IOException {
+            out.value(value);
+        }
+
+        @Override
+        public Integer read(JsonReader in) throws IOException {
+            int i = 0;
+            try {
+                String str = in.nextString();
+                i = Integer.parseInt(str);
+            } catch (Exception e) {
+
+            }
+            return i;
+        }
+    }
+
+    /**
+     * Gson容错机制，基于字段的容错（推荐）
+     */
+    private void gsonTest8() {
+        //int字段解析器
+        JsonDeserializer intJsonDeserializer = new JsonDeserializer() {
+            @Override
+            public Object deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
+                try {
+                    int asInt = json.getAsInt();
+                    return asInt;
+                } catch (Exception e) {
+                    return 111;
+                }
+            }
+
+        };
+        //String字段解析器不好使，不知道什么原因。
+        JsonDeserializer stringJsonDeserializer = new JsonDeserializer() {
+            @Override
+            public Object deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
+                try {
+                    String asString = json.getAsString();
+                    if (TextUtils.isEmpty(asString)) {
+                        asString = "";
+                    }
+                    Log.i("haha", "String解析器：" + asString);
+                    return asString;
+                } catch (Exception e) {
+                    Log.i("haha", "String解析器异常：" + e.toString());
+                    return "异常了";
+                }
+            }
+
+        };
+
+        Gson gson;
+        //方式五：基于某个字段类型的解析
+        gson = new Gson();
+        String jsonStr = "{\"name\":\"张三\",\"age\":\"\",\"className\":null}";
+
+        try {
+            Teacher teacher = gson.fromJson(jsonStr, Teacher.class);
+            Log.i("haha", "普通解析jsonStr：" + teacher);
+        } catch (Exception e) {
+            Log.i("haha", "普通解析jsonStr异常打印：" + e.toString());
+        }
+
+        //注意:Teacher的age字段为int型，但是json串里面的age字段对应的却是""，所以解析就会出现问题，但是这种方式匹配了一个专门针对int型的解析器。
+        gson = new GsonBuilder()
+                .registerTypeAdapter(int.class, intJsonDeserializer)
+                .registerTypeAdapter(String.class, stringJsonDeserializer)
+                .create();
+        Teacher teacher = gson.fromJson(jsonStr, Teacher.class);
+        Log.i("haha", "基于某个字段类型的解析：" + teacher);
+
     }
 
 }

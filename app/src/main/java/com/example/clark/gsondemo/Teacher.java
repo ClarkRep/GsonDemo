@@ -1,12 +1,28 @@
 package com.example.clark.gsondemo;
 
+import com.google.gson.annotations.JsonAdapter;
+
 /**
  * Created by Clark on 2016/5/30.
  */
 public class Teacher {
 
+    @JsonAdapter(MainActivity.IntegerTypeAdapter.class)
+    private int id;
+
+    private int age;
+
     private String name;
+
     private String className;
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
 
     public String getName() {
         return name;
@@ -24,8 +40,16 @@ public class Teacher {
         this.className = className;
     }
 
+    public int getAge() {
+        return age;
+    }
+
+    public void setAge(int age) {
+        this.age = age;
+    }
+
     @Override
     public String toString() {
-        return "Teacher[name:" + name + ",className:" + className + "]";
+        return "Teacher[id:" + id + ",name:" + name + ",className:" + className + ",age:" + age + "]";
     }
 }
